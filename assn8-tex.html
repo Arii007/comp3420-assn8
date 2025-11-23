@@ -69,7 +69,7 @@
          uniform sampler2D theTexture;
 
          // which texture to use:
-         // 0 = globe image, 1 = checkerboard image, 2 = procedural
+         // 0 = globe image, 1 = your image texture, 2 = procedural
          uniform int textureMode;
 
          // Color that is the result of this shader
@@ -80,7 +80,7 @@
              vec4 color;
 
              if (textureMode == 0 || textureMode == 1) {
-                 // image-based textures (globe or your checkerboard image)
+                 // image-based textures (globe or your image texture)
                  color = texture(theTexture, theUV);
              } else {
                  // procedural texture using UV coordinates
@@ -167,7 +167,7 @@
                <tbody>
                    <tr>
                      <td>1, 2, 3</td>
-                     <td>Switch between globe image, checkerboard image, and procedural texture</td>
+                     <td>Switch between globe image, your image texture, and procedural texture</td>
                    </tr>
                    <tr>
                      <td>x, y, z</td>
