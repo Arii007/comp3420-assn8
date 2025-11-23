@@ -1,0 +1,195 @@
+<html>
+<head>
+    <title>CSCI-610: Assn 8 - Textures</title>
+    
+    <link rel="icon" href="data:,">
+    
+    <!-- vertex Shader -->
+    <script id="sphereMap-V"  type="x-shader/x-vertex">
+    #version 300 es
+    precision mediump float;
+    // Vertex shader for texture-mapped objects
+
+    // Vertex Attributes
+    in vec3 aVertexPosition; // in model coords
+    in vec2 aUV;    // u-v coordinates
+
+    // outputs
+    out vec2 theUV;  // pass uv's onto the fragment shader
+    
+    // for object rotation
+    uniform vec3 theta;
+      
+    void main()
+    {
+        // Compute the sines and cosines of each rotation
+        // about each axis
+        vec3 angles = radians( theta );
+        vec3 c = cos( angles );
+        vec3 s = sin( angles );
+
+        // rotation matrices
+        mat4 rx = mat4 ( 1.0,  0.0,  0.0,  0.0,
+                         0.0,  c.x,  s.x,  0.0,
+                         0.0, -s.x,  c.x,  0.0,
+                         0.0,  0.0,  0.0,  1.0 );
+
+        mat4 ry = mat4 ( c.y,  0.0, -s.y,  0.0,
+                         0.0,  1.0,  0.0,  0.0,
+                         s.y,  0.0,  c.y,  0.0,
+                         0.0,  0.0,  0.0,  1.0 );
+
+        mat4 rz = mat4 ( c.z,  s.z,  0.0,  0.0,
+                        -s.z,  c.z,  0.0,  0.0,
+                         0.0,  0.0,  1.0,  0.0,
+                         0.0,  0.0,  0.0,  1.0 );
+                         
+        // pass uvs to fragment shader
+        theUV = aUV;
+
+        // transform vertex to clip space
+        gl_Position = rz * ry * rx * vec4 (aVertexPosition, 1.0);
+    }
+
+    </script>
+
+
+     <!-- fragment Shader -->
+     <script id="sphereMap-F" type="x-shader/x-fragment">
+         #version 300 es
+
+         // Fragment shader for texture mapping
+
+         precision lowp float;
+             
+         // uvs passed in from vertex shader
+         in vec2 theUV;
+         
+         // the texture to use (bound on TEXTURE0)
+         uniform sampler2D theTexture;
+
+         // which texture to use:
+         // 0 = globe image, 1 = checkerboard image, 2 = procedural
+         uniform int textureMode;
+
+         // Color that is the result of this shader
+         out vec4 fragColor;
+
+         void main(void) {
+
+             vec4 color;
+
+             if (textureMode == 0 || textureMode == 1) {
+                 // image-based textures (globe or your checkerboard image)
+                 color = texture(theTexture, theUV);
+             } else {
+                 // procedural texture using UV coordinates
+                 // horizontal stripes using the t coordinate
+                 float t = theUV.t;                     // use .t as in the notes
+                 float bands = step(0.5, fract(t * 10.0));
+
+                 vec3 c1 = vec3(0.1, 0.1, 0.5);        // dark blue
+                 vec3 c2 = vec3(0.9, 0.9, 0.2);        // yellow
+                 vec3 procColor = mix(c1, c2, bands);
+
+                 color = vec4(procColor, 1.0);
+             }
+
+             fragColor = color;
+         }
+
+    </script>
+     
+     <!-- Matrix library and code for standard transformations -->
+     <script type="text/javascript" src="gl-matrix-min.js"></script>
+     
+     <!-- include the shape creation functions -->
+    <script type="text/javascript" src="./cgIShape.js"></script>
+    
+    <!-- definition of standard shapes -->
+    <script type="text/javascript" src="./myShapes-min.js"></script>
+    
+    <!-- include the main texture code -->
+    <script type="text/javascript" src="./textureMain2.js"></script>
+    
+    <!-- texture images -->
+    <img id="world-texture" src="1_earth_16k.jpg" style="display: none;"> </img>
+    
+    <!-- keyboard functions -->
+    <script type="text/javascript">
+      function gotKey (event) {
+      
+        var key = event.key;
+      
+        //  change object type
+        if (key == 'c') {
+            nowShowing = 'Cube';
+            angles = cube_angles;
+        }
+        if (key == 's') {
+            nowShowing = 'Sphere';
+            angles = sphere_angles;
+        }
+      
+        // change texture
+        if (key == '1') curTexture = 'globe';
+        if (key == '2') curTexture = 'myimage';
+        if (key == '3') curTexture = 'proc';
+      
+        //  incremental rotation
+        if (key == 'x') angles[0] -= angleInc;
+        if (key == 'y') angles[1] -= angleInc;
+        if (key == 'z') angles[2] -= angleInc;
+        if (key == 'X') angles[0] += angleInc;
+        if (key == 'Y') angles[1] += angleInc;
+        if (key == 'Z') angles[2] += angleInc;
+          
+        draw();
+      }
+
+      // Call init once the webpage has loaded
+      window.onload = init;
+    </script>
+</head>
+
+<body>
+  <h1>CSCI-610: Assn 8 - Textures</h1>
+  <table>
+       <tr>
+           <td><canvas id="webgl-canvas" width="500" height="500">
+             Your browser does not support the HTML5 canvas element.
+           </canvas></td>
+           
+           <td>
+               <h3>Controls</h3>
+               
+               <table border="1">
+               <tbody>
+                   <tr>
+                     <td>1, 2, 3</td>
+                     <td>Switch between globe image, checkerboard image, and procedural texture</td>
+                   </tr>
+                   <tr>
+                     <td>x, y, z</td>
+                     <td>Rotate the current shape forward about the x, y, or z axis</td>
+                   </tr>
+                   <tr>
+                     <td>X, Y, Z</td>
+                     <td>Rotate the current shape backward about the x, y, or z axis</td>
+                   </tr>
+                   <tr>
+                     <td>c</td>
+                     <td>Select the cube as the current shape</td>
+                   </tr>
+                   <tr>
+                     <td>s</td>
+                     <td>Select the sphere as the current shape</td>
+                   </tr>
+               </tbody>
+               </table>
+               
+           </td>
+       </tr>
+   </table>
+</body>
+</html>
